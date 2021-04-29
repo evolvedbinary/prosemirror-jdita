@@ -47,7 +47,7 @@
     "@types/prosemirror-history": "^1.0.1",
     "@types/prosemirror-keymap": "^1.0.3",
     "@types/prosemirror-menu": "^1.0.2",
-    "@types/prosemirror-schema-list": "^1.0.1",
+    "@types/prosemirror-schema-list": "^1.0.3",
     "chai-as-promised": "^7.1.1",
     "jdita": "^0.2.4",
     "prosemirror-commands": "^1.1.4",
