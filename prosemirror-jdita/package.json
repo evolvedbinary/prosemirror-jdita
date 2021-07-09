@@ -60,7 +60,7 @@
     "prosemirror-view": "^1.16.2"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.11",
+    "@types/chai": "^4.2.21",
     "@types/mocha": "^7.0.2",
     "@types/prosemirror-model": "^1.7.2",
     "@types/prosemirror-state": "^1.2.5",
