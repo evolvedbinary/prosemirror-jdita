@@ -1,12 +1,11 @@
 import ChaiPromised from 'chai-as-promised';
 import { use } from 'chai';
-import { expect, assert } from 'chai';
+import { expect } from 'chai';
 import { xditaToJson } from 'jdita';
 import { document } from '../document';
+import { topic } from './test-utils';
 
 use(ChaiPromised);
-
-import { topic } from './xml';
 
 const attrs = {
   id: 'topic-id',
@@ -29,8 +28,8 @@ const pmjson = {
   }]
 };
 
-describe('Nodes', () => {
-  it('Topic Node', async () => {
+describe('document()', () => {
+  it('transforms the JDita "topic" node into a Prosemirror node', async () => {
     await expect(
       xditaToJson(topic(attrs))
         .then(jdita => document(jdita))

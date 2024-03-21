@@ -127,7 +127,6 @@ export class InputContainer {
   get el(): HTMLInputElement | undefined {
     return this._el;
   }
-
   // setter function with arguments of type HTMLInputElement or undefined
   set el(value: HTMLInputElement | undefined) {
     // will not do anything, if the the current HTML input element equals the to-be-set element
@@ -220,9 +219,10 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
  * @param type - NodeType or nodeName
  * @returns node index from the list of nodes
  */
-function canCreateIndex(type: NodeType) {
+export function canCreateIndex(type: NodeType) {
   return ['data', 'ul', 'li', 'p', 'section', 'stentry', 'strow', 'simpletable'].indexOf(type.name);
 }
+
 
 /**
  * Check if the node can be created or not.
@@ -230,7 +230,7 @@ function canCreateIndex(type: NodeType) {
  * @param type - NodeType object, contains the node name
  * @returns Boolean of whether the node can be created or not
  */
-function canCreate(type: NodeType) {
+export function canCreate(type: NodeType) {
   return canCreateIndex(type) > -1;
 }
 
@@ -247,7 +247,7 @@ function canCreate(type: NodeType) {
  * @param depth - distance from the current cursor position to the closest parent Node with children
  * @returns List of NodeTypes that can be created
  */
-function defaultBlocks(pos: ResolvedPos, depth = 0) {
+export function defaultBlocks(pos: ResolvedPos, depth = 0) {
   // Get the content match at the current cursor position
   const match = pos.node(-depth - 1).contentMatchAt(pos.indexAfter(-depth - 1));
   let index = -1;
@@ -264,6 +264,7 @@ function defaultBlocks(pos: ResolvedPos, depth = 0) {
   }
   return result;
 }
+
 
 /**
  * Get the Node that can be created at the current cursor position.
@@ -296,6 +297,7 @@ function defaultBlockAt(pos: ResolvedPos, depth = 0, preferred?: NodeType) {
 
 /**
  * Handle the enter key event when the cursor is at the end of the line.
+ *
  *
  * @param tr - The transaction object
  * @param dispatch - dispatch function
@@ -501,7 +503,7 @@ export function isPrevEmpty(tr: Transaction, depth = 0) {
 
 /**
  * Get the distance from the current cursor position to the closest parent Node with children.
- * 
+ *
  * @param tr - The Transaction object
  * @param empty - A Boolean, set to `false`
  * @returns A number containing the depth of the tested
@@ -528,6 +530,7 @@ export function getPrevDepth(tr: Transaction) {
     depth++;
 
   }
+
   return depth;
 }
 

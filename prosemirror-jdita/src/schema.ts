@@ -137,13 +137,14 @@ export interface SchemaNodes {
  * @param type - Type of the Child nodes
  * @returns - The children of the node
  */
-function getChildren(type: ChildTypes): string[] {
+export function getChildren(type: ChildTypes): string[] {
   if (Array.isArray(type)) {
     return type.map(subType => getChildren(subType)).reduce((result, children) =>
     result.concat(children.filter(child => result.indexOf(child) < 0)), [] as string[]);
   }
   return (type.isGroup ? nodeGroups[type.name] : [ type.name ]);
 }
+
 
 /**
  * Travel the node and generate the node spec
@@ -152,7 +153,7 @@ function getChildren(type: ChildTypes): string[] {
  * @param next - Next travel function
  * @returns SchemaNode
  */
-export function travel(node: typeof BaseNode, next: (nodeName: string) => void): SchemaNode {
+export function schemaTravel(node: typeof BaseNode, next: (nodeName: string) => void): SchemaNode {
   return (SCHEMAS[node.nodeName] || defaultTravel)(node, next);
 }
 

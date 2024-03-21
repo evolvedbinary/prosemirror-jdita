@@ -7,7 +7,7 @@ import { IS_MARK, defaultNodeName } from "./schema";
  * @param object  - Generic object
  * @returns object - The object with undefined attributes removed
  */
-function deleteUndefined(object?: any) {
+export function deleteUndefined(object?: any) {
   if (object) {
     for (let key in object) {
       if (typeof object[key] === 'undefined') {
@@ -53,7 +53,7 @@ export const NODES: Record<string, (value: JDita, parent: JDita) => any> = {
       });
     }
     const result = { type: value.nodeName, attrs, content: content.map(child => travel(child, value)) };
-    
+
     if (attrs && Object.keys(attrs).length) {
       result.attrs = attrs;
     }
@@ -115,7 +115,7 @@ export const NODES: Record<string, (value: JDita, parent: JDita) => any> = {
  * @param parent - The parent JDita node
  * @returns The transformed JDita node
  */
-function defaultTravel(value: JDita, parent: JDita): any {
+export function defaultTravel(value: JDita, parent: JDita): any {
   // children will become content
   const content = value.children?.map(child => travel(child, value));
   // attributes will become attrs
@@ -151,7 +151,7 @@ function defaultTravel(value: JDita, parent: JDita): any {
  * @param parent - The parent JDita node
  * @returns The transformed JDita node
  */
-function travel(value: JDita, parent: JDita): any {
+export function travel(value: JDita, parent: JDita): any {
   // if it's a special node, use the special node function,
   // otherwise use the default travel function
   const result = (NODES[value.nodeName] || defaultTravel)(value, parent);
