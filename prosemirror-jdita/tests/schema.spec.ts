@@ -1,5 +1,5 @@
 import { assert } from 'chai';
-import { travel } from './schema';
+import { travel } from '../src/schema';
 import { TextNode, BaseNode } from 'jdita';
 
 describe('Schema', () => {
