@@ -192,33 +192,152 @@ export class InputContainer {
  */
 export function insertImage(type: NodeType, input: InputContainer): Command {
   return function (state, dispatch) {
-    function fileSelected(this: HTMLInputElement) {
-      if (input.el?.files?.length === 1) {
-        const file = input.el.files[0];
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onerror = () => {
-        };
-        reader.onload = () => {
-          if (dispatch && typeof reader.result === 'string') {
-            const node = createNode(type, { src: reader.result });
-            const tr = state.tr.insert(state.selection.$to.pos, node);
-            dispatch(tr.scrollIntoView());
-          }
-        };
-      }
-    }
+    // on click, the cursor selection should be empty
     try {
       if (!state.selection.empty) {
         return false;
       }
       if (dispatch) {
-        if (!input.el) {
-          return false;
-        }
-        input.el.value = '';
-        input.on('command', fileSelected);
-        return true;
+        // show the image upload dialog
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'overlay';
+
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.id = 'dialog';
+
+        // Create dialog content
+        const title = document.createElement('h1');
+        title.textContent = 'Upload Image';
+
+        const fileLabel = document.createElement('label');
+        fileLabel.textContent = 'File:';
+        fileLabel.htmlFor = 'fileInput';
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = 'fileInput';
+
+        const base64Label = document.createElement('label');
+        base64Label.textContent = 'Base 64:';
+        base64Label.htmlFor = 'base64Input';
+        const base64Input = document.createElement('input');
+        base64Input.type = 'text';
+        base64Input.id = 'base64Input';
+        base64Input.placeholder = 'Base64';
+
+        const heightLabel = document.createElement('label');
+        heightLabel.textContent = 'Height:';
+        heightLabel.htmlFor = 'heightInput';
+        const heightInput = document.createElement('input');
+        heightInput.type = 'text';
+        heightInput.id = 'heightInput';
+        heightInput.placeholder = 'Height';
+
+        const widthLabel = document.createElement('label');
+        widthLabel.textContent = 'Width:';
+        widthLabel.htmlFor = 'widthInput';
+        const widthInput = document.createElement('input');
+        widthInput.type = 'text';
+        widthInput.id = 'widthInput';
+        widthInput.placeholder = 'Width';
+
+        const altTextLabel = document.createElement('label');
+        altTextLabel.textContent = 'Alt Text:';
+        altTextLabel.htmlFor = 'altTextInput';
+        const altTextInput = document.createElement('input');
+        altTextInput.type = 'text';
+        altTextInput.id = 'altTextInput';
+        altTextInput.placeholder = 'Alt Text';
+
+        const btnConatiner = document.createElement('div');
+        btnConatiner.id = 'btnConatiner';
+
+        const closeButton = document.createElement('button');
+        closeButton.id = 'closeButton';
+        closeButton.classList.add('ic-cross');
+
+        const okButton = document.createElement('button');
+        okButton.id = 'okButton';
+        okButton.classList.add('ic-checkmark');
+
+        btnConatiner.appendChild(closeButton);
+        btnConatiner.appendChild(okButton);
+
+        // Append dialog content to dialog
+        dialog.appendChild(title);
+
+        const fields = [
+            { label: fileLabel, input: fileInput },
+            { label: base64Label, input: base64Input },
+            { label: heightLabel, input: heightInput },
+            { label: widthLabel, input: widthInput },
+            { label: altTextLabel, input: altTextInput }
+        ];
+
+        fields.forEach(field => {
+            const container = document.createElement('div');
+            container.classList.add('field-container');
+            container.appendChild(field.label);
+            container.appendChild(field.input);
+            dialog.appendChild(container);
+        });
+
+        dialog.appendChild(btnConatiner);
+
+        // Append dialog to overlay
+        overlay.appendChild(dialog);
+
+        // Append overlay to body
+        document.body.appendChild(overlay);
+
+        // Add event listener to close button
+        closeButton.addEventListener('click', function () {
+          document.body.removeChild(overlay);
+        });
+
+        // Add event listener to ok button
+        fileInput.addEventListener('change', function () {
+          if (!fileInput.files || !fileInput.files.length) return false;
+          const file = fileInput.files[0];
+          console.log('Name:', file.name);
+          console.log('Size:', file.size);
+          console.log('Type:', file.type);
+          console.log('Last Modified:', file.lastModified);
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onerror = () => {
+          };
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = function () {
+              const width = img.width;
+              const height = img.height;
+              console.log('Width:', width);
+              console.log('Height:', height);
+              // Update the input fields with the image dimensions
+              widthInput.value = width as unknown as string;
+              heightInput.value = height as unknown as string;
+            };
+            img.src = reader.result as string;
+            
+          };
+        });
+
+        okButton.addEventListener('click', () => {
+          if (dispatch && fileInput.files?.length) {
+            const reader = new FileReader();
+            const file = fileInput.files[0];
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+              const node = createNode(type, { src: reader.result });
+              const tr = state.tr.insert(state.selection.$to.pos, node);
+              dispatch(tr.scrollIntoView());
+            }
+            document.body.removeChild(overlay);
+            return true;
+          }
+        })
       }
       return true;
     } catch (e) {
@@ -412,7 +531,7 @@ export function enterSplit(tr: Transaction, dispatch = false, depth = 0): Transa
     if (atEnd && depth > 1 && $from.depth - depth > 2) {
       const defaultType = $from.node(-depth + 1).type;
       return deleteEmptyLine(tr, depth - 1)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .split(tr.mapping.map($from.pos), depth, [{ type: defaultType }] as any);
     }
     if (tr.selection instanceof TextSelection) tr.deleteSelection();
@@ -529,7 +648,7 @@ export function isPrevEmpty(tr: Transaction, depth = 0) {
 export function getDepth(tr: Transaction, empty = false) {
   let depth = 0;
 
-  while((empty ? isEmpty : isEOL)(tr, depth + 1)) {
+  while ((empty ? isEmpty : isEOL)(tr, depth + 1)) {
     depth++;
   }
 
@@ -544,7 +663,7 @@ export function getDepth(tr: Transaction, empty = false) {
  */
 export function getPrevDepth(tr: Transaction) {
   let depth = 0;
-  while(isPrevEmpty(tr, depth + 1)) {
+  while (isPrevEmpty(tr, depth + 1)) {
     depth++;
 
   }
@@ -596,12 +715,12 @@ export function enterPressed(state: EditorState, dispatch?: (tr: Transaction) =>
     $from = tr.selection.$from;
   }
 
-    // prepare the transaction
-    const resultTr: false | Transaction = isEOL(state.tr, depth)       // when the cursor is at the end of the line
-                                          ? $from.parentOffset === 0            // when the cursor is at the beginning of parent node
-                                            ? enterEmpty(tr, !!dispatch, depth) // then enterEmpty is triggered
-                                            : enterEOL(tr, !!dispatch, depth)   // when the cursor is not at the beginning of parent node, the cursor can be at the end text node, then enterEOL is triggered
-                                          : enterSplit(tr, !!dispatch, depth);  // when the cursor is not at the end of the line, then enterSplit is triggered
+  // prepare the transaction
+  const resultTr: false | Transaction = isEOL(state.tr, depth)       // when the cursor is at the end of the line
+    ? $from.parentOffset === 0            // when the cursor is at the beginning of parent node
+      ? enterEmpty(tr, !!dispatch, depth) // then enterEmpty is triggered
+      : enterEOL(tr, !!dispatch, depth)   // when the cursor is not at the beginning of parent node, the cursor can be at the end text node, then enterEOL is triggered
+    : enterSplit(tr, !!dispatch, depth);  // when the cursor is not at the end of the line, then enterSplit is triggered
 
   // if the transaction is triggered, then dispatch the transaction
   if (dispatch && resultTr !== false) {

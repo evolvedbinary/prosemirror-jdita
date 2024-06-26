@@ -67,3 +67,11 @@
 .ic-download:before {
   content: "\ea36";
 }
+
+.ic-checkmark:before {
+  content: "\ea10";
+}
+
+.ic-cross:before {
+  content: "\ea0f";
+}

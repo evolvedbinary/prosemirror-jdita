@@ -225,32 +225,7 @@ function insertImageItem(type: NodeType, props: Partial<MenuItemSpec> = {}): Men
   const input = new InputContainer();
   const command = insertImage(type, input);
   return commandItem(command, {
-    ...props,
-    enable: command,
-    // Prosemirror method `render`: Renders the icon according to its MenuItemSpec.display, and adds an event handler which
-    // executes the command when the representation is clicked.
-    render(editorView) {
-      const el = document.createElement('div');
-      // create a button containing the "Open XDITA file" option
-      el.classList.add('ProseMirror-menuitem-file');
-      input.el = document.createElement('input');
-      input.el.type = 'file';
-      input.el.title = typeof props.title === 'function' ? props.title(editorView.state) : props.title || '';
-      // create the label for the button and add a CSS class according to the EditorState
-      const label = document.createElement('span');
-      label.innerHTML = props.label || '';
-      el.appendChild(input.el);
-      el.appendChild(label);
-      if (command(editorView.state)) {
-        el.classList.remove('ProseMirror-menu-disabled');
-        input.el.disabled = false;
-      } else {
-        el.classList.add('ProseMirror-menu-disabled');
-        input.el.disabled = true;
-      }
-      // return the HTML node containing the "insert Image" button
-      return el;
-    },
+    ...props
   });
 }
 
@@ -291,7 +266,7 @@ export function menu(schema: Schema, { start, before, after, end}: Additions = {
   ], [
     insertItem(schema.nodes.ol, { icon: {text: ""}, title: 'Ordered list', class: 'ic-olist' }),
     insertItem(schema.nodes.ul, { icon: {text: ""}, title: 'Unordered list', class: 'ic-ulist' }),
-    insertImageItem(schema.nodes.image, { title: 'Insert image', class: 'ic-image' }),
+    insertImageItem(schema.nodes.image, { icon: {text: ""}, title: 'Insert image', class: 'ic-image' }),
   ]];
   if (!start) {
     start = [];
