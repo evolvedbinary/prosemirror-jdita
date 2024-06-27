@@ -44,7 +44,8 @@ export function createNode(type: NodeType, args: Record<string, any> = {}): Node
     case 'ol': return type.createAndFill({}, createNode(type.schema.nodes['li'])) as Node;
     case 'section': return type.createAndFill({}, createNode(type.schema.nodes['ul'])) as Node;
     case 'strow': return type.createAndFill({}, createNode(type.schema.nodes['stentry'])) as Node;
-    case 'image': return type.createAndFill({ href: args.src }) as Node;
+    case 'image': return type.createAndFill({ href: args.src, height: args.height, width: args.width }) as Node;
+    case 'fig': return type.createAndFill({}, createNode(type.schema.nodes['image'], args)) as Node;
   }
   throw new Error('unkown node type: ' + type.name);
 }
@@ -330,7 +331,7 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
             const file = fileInput.files[0];
             reader.readAsDataURL(file);
             reader.onload = () => {
-              const node = createNode(type, { src: reader.result });
+              const node = createNode(type.schema.nodes['fig'], { src: reader.result, alt: altTextInput.value, height: heightInput.value, width: widthInput.value});
               const tr = state.tr.insert(state.selection.$to.pos, node);
               dispatch(tr.scrollIntoView());
             }
