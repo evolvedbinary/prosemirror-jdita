@@ -44,7 +44,7 @@ export function createNode(type: NodeType, args: Record<string, any> = {}): Node
     case 'ol': return type.createAndFill({}, createNode(type.schema.nodes['li'])) as Node;
     case 'section': return type.createAndFill({}, createNode(type.schema.nodes['ul'])) as Node;
     case 'strow': return type.createAndFill({}, createNode(type.schema.nodes['stentry'])) as Node;
-    case 'image': return type.createAndFill({ href: args.src, height: args.height, width: args.width }) as Node;
+    case 'image': return type.createAndFill({ href: args.src, height: args.height, width: args.width, scope: args.scope }) as Node;
     case 'fig': return type.createAndFill({}, createNode(type.schema.nodes['image'], args)) as Node;
   }
   throw new Error('unkown node type: ' + type.name);
@@ -219,13 +219,20 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
         fileInput.type = 'file';
         fileInput.id = 'fileInput';
 
-        const base64Label = document.createElement('label');
-        base64Label.textContent = 'Base 64:';
-        base64Label.htmlFor = 'base64Input';
-        const base64Input = document.createElement('input');
-        base64Input.type = 'text';
-        base64Input.id = 'base64Input';
-        base64Input.placeholder = 'Base64';
+        const urlLabel = document.createElement('label');
+        urlLabel.textContent = 'URL:';
+        urlLabel.htmlFor = 'urlInput';
+        const urlInput = document.createElement('input');
+        urlInput.type = 'text';
+        urlInput.id = 'urlInput';
+        urlInput.placeholder = 'url';
+
+        const embeddedLabel = document.createElement('label');
+        embeddedLabel.textContent = 'embed a copy';
+        embeddedLabel.htmlFor = 'embeddedInput';
+        const embeddedInput = document.createElement('input');
+        embeddedInput.type = 'checkbox';
+        embeddedInput.id = 'embeddedInput';
 
         const heightLabel = document.createElement('label');
         heightLabel.textContent = 'Height:';
@@ -269,19 +276,20 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
         dialog.appendChild(title);
 
         const fields = [
-            { label: fileLabel, input: fileInput },
-            { label: base64Label, input: base64Input },
-            { label: heightLabel, input: heightInput },
-            { label: widthLabel, input: widthInput },
-            { label: altTextLabel, input: altTextInput }
+          { label: fileLabel, input: fileInput },
+          { label: urlLabel, input: urlInput },
+          { label: embeddedLabel, input: embeddedInput },
+          { label: heightLabel, input: heightInput },
+          { label: widthLabel, input: widthInput },
+          { label: altTextLabel, input: altTextInput },
         ];
 
         fields.forEach(field => {
-            const container = document.createElement('div');
-            container.classList.add('field-container');
-            container.appendChild(field.label);
-            container.appendChild(field.input);
-            dialog.appendChild(container);
+          const container = document.createElement('div');
+          container.classList.add('field-container');
+          container.appendChild(field.label);
+          container.appendChild(field.input);
+          dialog.appendChild(container);
         });
 
         dialog.appendChild(btnConatiner);
@@ -295,6 +303,10 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
         // Add event listener to close button
         closeButton.addEventListener('click', function () {
           document.body.removeChild(overlay);
+        });
+
+        urlInput.addEventListener('change', () => {
+
         });
 
         // Add event listener to ok button
@@ -321,7 +333,6 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
               heightInput.value = height as unknown as string;
             };
             img.src = reader.result as string;
-            
           };
         });
 
@@ -331,13 +342,29 @@ export function insertImage(type: NodeType, input: InputContainer): Command {
             const file = fileInput.files[0];
             reader.readAsDataURL(file);
             reader.onload = () => {
-              const node = createNode(type.schema.nodes['fig'], { src: reader.result, alt: altTextInput.value, height: heightInput.value, width: widthInput.value});
+              const node = createNode(type.schema.nodes['fig'], { src: reader.result, scope: 'peer', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
               const tr = state.tr.insert(state.selection.$to.pos, node);
               dispatch(tr.scrollIntoView());
             }
-            document.body.removeChild(overlay);
-            return true;
+          } else if (dispatch && urlInput.value.length && !embeddedInput.checked) {
+            const node = createNode(type.schema.nodes['fig'], { src: urlInput.value, scope: 'external', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
+            const tr = state.tr.insert(state.selection.$to.pos, node);
+            dispatch(tr.scrollIntoView());
+          } else if (dispatch && urlInput.value.length && embeddedInput.checked) {
+            fetch(urlInput.value)
+              .then(response => response.blob())
+              .then(blob => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const node = createNode(type.schema.nodes['fig'], { src: reader.result, scope: 'peer',alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
+                  const tr = state.tr.insert(state.selection.$to.pos, node);
+                  dispatch(tr.scrollIntoView());
+                };
+                reader.readAsDataURL(blob);
+              })
           }
+          document.body.removeChild(overlay);
+          return true;
         })
       }
       return true;
