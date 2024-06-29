@@ -191,7 +191,7 @@ export class InputContainer {
  * @param input - InputContainer
  * @returns Command
  */
-export function insertImage(type: NodeType, input: InputContainer): Command {
+export function insertImage(type: NodeType): Command {
   return function (state, dispatch) {
     // on click, the cursor selection should be empty
     try {

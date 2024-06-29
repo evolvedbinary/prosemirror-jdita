@@ -93,6 +93,7 @@ export function shortcuts(schema: Schema) {
     'Ctrl-z': undo,
     'Ctrl-y': redo,
     'Ctrl-Shift-z': redo,
+    'Alt-n': insertImage(schema.nodes.image),
   });
 }
 
@@ -222,8 +223,7 @@ function insertItem(type: NodeType, props: Partial<MenuItemSpec> = {}): MenuElem
  * @returns A MenuElement containing the HTML node of the entire button element bound to its command
  */
 function insertImageItem(type: NodeType, props: Partial<MenuItemSpec> = {}): MenuElement {
-  const input = new InputContainer();
-  const command = insertImage(type, input);
+  const command = insertImage(type);
   return commandItem(command, {
     ...props
   });
