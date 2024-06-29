@@ -342,7 +342,11 @@ export function insertImage(type: NodeType): Command {
             const file = fileInput.files[0];
             reader.readAsDataURL(file);
             reader.onload = () => {
-              const node = createNode(type.schema.nodes['fig'], { src: reader.result, scope: 'peer', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
+              // capture the file name in the base64 string
+              // edit the image base64 to include a url copy
+              const base64 = reader.result?.split(',') as string;
+              const base64withName = base64[0] + `;filename=${file.name}` + ',' + base64[1];
+              const node = createNode(type.schema.nodes['fig'], { src: base64withName, scope: 'peer', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
               const tr = state.tr.insert(state.selection.$to.pos, node);
               dispatch(tr.scrollIntoView());
             }
@@ -351,12 +355,16 @@ export function insertImage(type: NodeType): Command {
             const tr = state.tr.insert(state.selection.$to.pos, node);
             dispatch(tr.scrollIntoView());
           } else if (dispatch && urlInput.value.length && embeddedInput.checked) {
+            // handled the case where the user wants to embed the image from an external source
             fetch(urlInput.value)
               .then(response => response.blob())
               .then(blob => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                  const node = createNode(type.schema.nodes['fig'], { src: reader.result, scope: 'peer',alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
+                  // edit the image base64 to include a url copy
+                  const base64 = reader.result?.split(',') as string;
+                  const base64withurl = base64[0] + `;url=${urlInput.value}` + ',' + base64[1];
+                  const node = createNode(type.schema.nodes['fig'], { src: base64withurl, scope: 'peer', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
                   const tr = state.tr.insert(state.selection.$to.pos, node);
                   dispatch(tr.scrollIntoView());
                 };
