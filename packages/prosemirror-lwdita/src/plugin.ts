@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { keymap } from "prosemirror-keymap";
 import { menuBar, MenuElement, MenuItem, MenuItemSpec } from "prosemirror-menu";
-import { toggleMark, newLine, hasMark, insertNode, insertImage, InputContainer } from "./commands";
+import { toggleMark, newLine, hasMark, insertNode, insertImage, imageInputOverlay, createNode } from "./commands";
 import { redo, undo } from "prosemirror-history";
 import { MarkType, NodeType, Schema } from "prosemirror-model";
-import { Command } from "prosemirror-state";
+import { Command, Plugin } from "prosemirror-state";
 
 /**
  * This is the entire DOM node of the Prosemirror editor that will be observed for DOM mutations
@@ -298,3 +298,29 @@ export function menu(schema: Schema, { start, before, after, end}: Additions = {
     ...end,
   ] });
 }
+
+
+export const doubleClickImagePlugin = new Plugin({
+  props: {
+    handleDOMEvents: {
+      dblclick: (view, event) => {
+        const { schema, doc } = view.state;
+        const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
+        if (pos) {
+          const node = doc.nodeAt(pos.pos);
+          const { state, dispatch } = view;
+          if (node && node.type === schema.nodes.image) {
+            imageInputOverlay((imageInfo) => {
+              if (!imageInfo) return false;
+              const newNode = createNode(schema.nodes['fig'], { src: imageInfo.src, scope: imageInfo.scope, alt: imageInfo.alt, height: imageInfo.height, width: imageInfo.width });
+              dispatch(state.tr.replaceWith(pos.pos - 1, pos.pos + 1, newNode));
+            }, node);
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+  }
+});

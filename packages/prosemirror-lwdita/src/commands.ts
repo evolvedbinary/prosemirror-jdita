@@ -179,6 +179,212 @@ export class InputContainer {
 }
 
 /**
+ * Render an image upload dialog. with an overlay
+ * upload an image from local machine or a URL
+ * set the image attributes like height, width, alt text
+ * @param callback - callback function to handle the image attributes
+ * @param node - Node selected node to edit
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function imageInputOverlay(callback: (args: any) => void, node?: Node): void {
+  // show the image upload dialog
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'overlay';
+
+  // Create dialog
+  const dialog = document.createElement('div');
+  dialog.id = 'dialog';
+
+  // Create dialog content
+  const title = document.createElement('h1');
+  title.textContent = 'Upload Image';
+
+  const fileLabel = document.createElement('label');
+  fileLabel.textContent = 'File:';
+  fileLabel.htmlFor = 'fileInput';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.id = 'fileInput';
+
+  const urlLabel = document.createElement('label');
+  urlLabel.textContent = 'URL:';
+  urlLabel.htmlFor = 'urlInput';
+  const urlInput = document.createElement('input');
+  urlInput.type = 'text';
+  urlInput.id = 'urlInput';
+  urlInput.placeholder = 'url';
+
+  const embeddedLabel = document.createElement('label');
+  embeddedLabel.textContent = 'embed a copy';
+  embeddedLabel.htmlFor = 'embeddedInput';
+  const embeddedInput = document.createElement('input');
+  embeddedInput.type = 'checkbox';
+  embeddedInput.id = 'embeddedInput';
+
+  const heightLabel = document.createElement('label');
+  heightLabel.textContent = 'Height:';
+  heightLabel.htmlFor = 'heightInput';
+  const heightInput = document.createElement('input');
+  heightInput.type = 'text';
+  heightInput.id = 'heightInput';
+  heightInput.placeholder = 'Height';
+
+  const widthLabel = document.createElement('label');
+  widthLabel.textContent = 'Width:';
+  widthLabel.htmlFor = 'widthInput';
+  const widthInput = document.createElement('input');
+  widthInput.type = 'text';
+  widthInput.id = 'widthInput';
+  widthInput.placeholder = 'Width';
+
+  const altTextLabel = document.createElement('label');
+  altTextLabel.textContent = 'Alt Text:';
+  altTextLabel.htmlFor = 'altTextInput';
+  const altTextInput = document.createElement('input');
+  altTextInput.type = 'text';
+  altTextInput.id = 'altTextInput';
+  altTextInput.placeholder = 'Alt Text';
+
+  const btnConatiner = document.createElement('div');
+  btnConatiner.id = 'btnConatiner';
+
+  const closeButton = document.createElement('button');
+  closeButton.id = 'closeButton';
+  closeButton.classList.add('ic-cross');
+
+  const okButton = document.createElement('button');
+  okButton.id = 'okButton';
+  okButton.classList.add('ic-checkmark');
+
+  btnConatiner.appendChild(closeButton);
+  btnConatiner.appendChild(okButton);
+
+  // Append dialog content to dialog
+  dialog.appendChild(title);
+
+  const fields = [
+    { label: fileLabel, input: fileInput },
+    { label: urlLabel, input: urlInput },
+    { label: embeddedLabel, input: embeddedInput },
+    { label: heightLabel, input: heightInput },
+    { label: widthLabel, input: widthInput },
+    { label: altTextLabel, input: altTextInput },
+  ];
+
+  fields.forEach(field => {
+    const container = document.createElement('div');
+    container.classList.add('field-container');
+    container.appendChild(field.label);
+    container.appendChild(field.input);
+    dialog.appendChild(container);
+  });
+
+  dialog.appendChild(btnConatiner);
+
+  // Append dialog to overlay
+  overlay.appendChild(dialog);
+
+  // Append overlay to body
+  document.body.appendChild(overlay);
+
+  if(node) {
+    //extract the image attributes
+    const src = node.attrs.href;
+    const alt = node.attrs.alt;
+    const height = node.attrs.height;
+    const width = node.attrs.width;
+    //set the input fields
+    urlInput.value = src;
+    altTextInput.value = alt;
+    heightInput.value = height;
+    widthInput.value = width;
+  }
+
+  // Add event listener to close button
+  closeButton.addEventListener('click', function () {
+    document.body.removeChild(overlay);
+    return null;
+  });
+
+  urlInput.addEventListener('change', () => {
+
+  });
+
+  // Add event listener to ok button
+  fileInput.addEventListener('change', function () {
+    if (!fileInput.files || !fileInput.files.length) return false;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onerror = () => {
+    };
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = function () {
+        const width = img.width;
+        const height = img.height;
+        // Update the input fields with the image dimensions
+        widthInput.value = width as unknown as string;
+        heightInput.value = height as unknown as string;
+      };
+      img.src = reader.result as string;
+    };
+  });
+
+  okButton.addEventListener('click', () => {
+    if (fileInput.files?.length) {
+      const reader = new FileReader();
+      const file = fileInput.files[0];
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        // capture the file name in the base64 string
+        // edit the image base64 to include a url copy
+        const base64 = reader.result?.split(',') as string;
+        const base64withName = base64[0] + `;filename=${file.name}` + ',' + base64[1];
+        callback({
+          src: base64withName,
+          scope: 'peer',
+          alt: altTextInput.value,
+          height: heightInput.value,
+          width: widthInput.value
+        })
+      }
+    } else if (urlInput.value.length && !embeddedInput.checked) {
+      callback({
+        src: urlInput.value,
+        scope: 'external',
+        alt: altTextInput.value,
+        height: heightInput.value,
+        width: widthInput.value
+      })
+    } else if (urlInput.value.length && embeddedInput.checked) {
+      // handled the case where the user wants to embed the image from an external source
+      fetch(urlInput.value)
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            // edit the image base64 to include a url copy
+            const base64 = reader.result?.split(',') as string;
+            const base64withurl = base64[0] + `;url=${urlInput.value}` + ',' + base64[1];
+            callback({
+              src: base64withurl,
+              scope: 'peer',
+              alt: altTextInput.value,
+              height: heightInput.value,
+              width: widthInput.value
+            })
+          };
+          reader.readAsDataURL(blob);
+        })
+    }
+    document.body.removeChild(overlay);
+  });
+}
+
+
+/**
  * Creates a command to insert a new Image node at the current cursor position.
  *
  * @remarks
@@ -200,180 +406,12 @@ export function insertImage(type: NodeType): Command {
       }
       if (dispatch) {
         // show the image upload dialog
-        // Create overlay
-        const overlay = document.createElement('div');
-        overlay.id = 'overlay';
-
-        // Create dialog
-        const dialog = document.createElement('div');
-        dialog.id = 'dialog';
-
-        // Create dialog content
-        const title = document.createElement('h1');
-        title.textContent = 'Upload Image';
-
-        const fileLabel = document.createElement('label');
-        fileLabel.textContent = 'File:';
-        fileLabel.htmlFor = 'fileInput';
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.id = 'fileInput';
-
-        const urlLabel = document.createElement('label');
-        urlLabel.textContent = 'URL:';
-        urlLabel.htmlFor = 'urlInput';
-        const urlInput = document.createElement('input');
-        urlInput.type = 'text';
-        urlInput.id = 'urlInput';
-        urlInput.placeholder = 'url';
-
-        const embeddedLabel = document.createElement('label');
-        embeddedLabel.textContent = 'embed a copy';
-        embeddedLabel.htmlFor = 'embeddedInput';
-        const embeddedInput = document.createElement('input');
-        embeddedInput.type = 'checkbox';
-        embeddedInput.id = 'embeddedInput';
-
-        const heightLabel = document.createElement('label');
-        heightLabel.textContent = 'Height:';
-        heightLabel.htmlFor = 'heightInput';
-        const heightInput = document.createElement('input');
-        heightInput.type = 'text';
-        heightInput.id = 'heightInput';
-        heightInput.placeholder = 'Height';
-
-        const widthLabel = document.createElement('label');
-        widthLabel.textContent = 'Width:';
-        widthLabel.htmlFor = 'widthInput';
-        const widthInput = document.createElement('input');
-        widthInput.type = 'text';
-        widthInput.id = 'widthInput';
-        widthInput.placeholder = 'Width';
-
-        const altTextLabel = document.createElement('label');
-        altTextLabel.textContent = 'Alt Text:';
-        altTextLabel.htmlFor = 'altTextInput';
-        const altTextInput = document.createElement('input');
-        altTextInput.type = 'text';
-        altTextInput.id = 'altTextInput';
-        altTextInput.placeholder = 'Alt Text';
-
-        const btnConatiner = document.createElement('div');
-        btnConatiner.id = 'btnConatiner';
-
-        const closeButton = document.createElement('button');
-        closeButton.id = 'closeButton';
-        closeButton.classList.add('ic-cross');
-
-        const okButton = document.createElement('button');
-        okButton.id = 'okButton';
-        okButton.classList.add('ic-checkmark');
-
-        btnConatiner.appendChild(closeButton);
-        btnConatiner.appendChild(okButton);
-
-        // Append dialog content to dialog
-        dialog.appendChild(title);
-
-        const fields = [
-          { label: fileLabel, input: fileInput },
-          { label: urlLabel, input: urlInput },
-          { label: embeddedLabel, input: embeddedInput },
-          { label: heightLabel, input: heightInput },
-          { label: widthLabel, input: widthInput },
-          { label: altTextLabel, input: altTextInput },
-        ];
-
-        fields.forEach(field => {
-          const container = document.createElement('div');
-          container.classList.add('field-container');
-          container.appendChild(field.label);
-          container.appendChild(field.input);
-          dialog.appendChild(container);
+        imageInputOverlay((imageInfo) => {
+          if (!imageInfo) return false;
+          const node = createNode(type.schema.nodes['fig'], { src: imageInfo.src, scope: imageInfo.scope, alt: imageInfo.alt, height: imageInfo.height, width: imageInfo.width });
+          const tr = state.tr.insert(state.selection.$to.pos, node);
+          dispatch(tr.scrollIntoView());
         });
-
-        dialog.appendChild(btnConatiner);
-
-        // Append dialog to overlay
-        overlay.appendChild(dialog);
-
-        // Append overlay to body
-        document.body.appendChild(overlay);
-
-        // Add event listener to close button
-        closeButton.addEventListener('click', function () {
-          document.body.removeChild(overlay);
-        });
-
-        urlInput.addEventListener('change', () => {
-
-        });
-
-        // Add event listener to ok button
-        fileInput.addEventListener('change', function () {
-          if (!fileInput.files || !fileInput.files.length) return false;
-          const file = fileInput.files[0];
-          console.log('Name:', file.name);
-          console.log('Size:', file.size);
-          console.log('Type:', file.type);
-          console.log('Last Modified:', file.lastModified);
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onerror = () => {
-          };
-          reader.onload = () => {
-            const img = new Image();
-            img.onload = function () {
-              const width = img.width;
-              const height = img.height;
-              console.log('Width:', width);
-              console.log('Height:', height);
-              // Update the input fields with the image dimensions
-              widthInput.value = width as unknown as string;
-              heightInput.value = height as unknown as string;
-            };
-            img.src = reader.result as string;
-          };
-        });
-
-        okButton.addEventListener('click', () => {
-          if (dispatch && fileInput.files?.length) {
-            const reader = new FileReader();
-            const file = fileInput.files[0];
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-              // capture the file name in the base64 string
-              // edit the image base64 to include a url copy
-              const base64 = reader.result?.split(',') as string;
-              const base64withName = base64[0] + `;filename=${file.name}` + ',' + base64[1];
-              const node = createNode(type.schema.nodes['fig'], { src: base64withName, scope: 'peer', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
-              const tr = state.tr.insert(state.selection.$to.pos, node);
-              dispatch(tr.scrollIntoView());
-            }
-          } else if (dispatch && urlInput.value.length && !embeddedInput.checked) {
-            const node = createNode(type.schema.nodes['fig'], { src: urlInput.value, scope: 'external', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
-            const tr = state.tr.insert(state.selection.$to.pos, node);
-            dispatch(tr.scrollIntoView());
-          } else if (dispatch && urlInput.value.length && embeddedInput.checked) {
-            // handled the case where the user wants to embed the image from an external source
-            fetch(urlInput.value)
-              .then(response => response.blob())
-              .then(blob => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  // edit the image base64 to include a url copy
-                  const base64 = reader.result?.split(',') as string;
-                  const base64withurl = base64[0] + `;url=${urlInput.value}` + ',' + base64[1];
-                  const node = createNode(type.schema.nodes['fig'], { src: base64withurl, scope: 'peer', alt: altTextInput.value, height: heightInput.value, width: widthInput.value });
-                  const tr = state.tr.insert(state.selection.$to.pos, node);
-                  dispatch(tr.scrollIntoView());
-                };
-                reader.readAsDataURL(blob);
-              })
-          }
-          document.body.removeChild(overlay);
-          return true;
-        })
       }
       return true;
     } catch (e) {
