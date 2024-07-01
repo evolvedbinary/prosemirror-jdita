@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { keymap } from "prosemirror-keymap";
 import { menuBar, MenuElement, MenuItem, MenuItemSpec } from "prosemirror-menu";
-import { toggleMark, newLine, hasMark, insertNode, insertImage, InputContainer } from "./commands";
+import { toggleMark, newLine, hasMark, insertNode, insertImage, imageInputOverlay, createNode } from "./commands";
 import { redo, undo } from "prosemirror-history";
 import { MarkType, NodeType, Schema } from "prosemirror-model";
-import { Command } from "prosemirror-state";
+import { Command, Plugin } from "prosemirror-state";
 
 /**
  * This is the entire DOM node of the Prosemirror editor that will be observed for DOM mutations
@@ -93,6 +93,7 @@ export function shortcuts(schema: Schema) {
     'Ctrl-z': undo,
     'Ctrl-y': redo,
     'Ctrl-Shift-z': redo,
+    'Alt-n': insertImage(schema.nodes.image),
   });
 }
 
@@ -222,35 +223,9 @@ function insertItem(type: NodeType, props: Partial<MenuItemSpec> = {}): MenuElem
  * @returns A MenuElement containing the HTML node of the entire button element bound to its command
  */
 function insertImageItem(type: NodeType, props: Partial<MenuItemSpec> = {}): MenuElement {
-  const input = new InputContainer();
-  const command = insertImage(type, input);
+  const command = insertImage(type);
   return commandItem(command, {
-    ...props,
-    enable: command,
-    // Prosemirror method `render`: Renders the icon according to its MenuItemSpec.display, and adds an event handler which
-    // executes the command when the representation is clicked.
-    render(editorView) {
-      const el = document.createElement('div');
-      // create a button containing the "Open XDITA file" option
-      el.classList.add('ProseMirror-menuitem-file');
-      input.el = document.createElement('input');
-      input.el.type = 'file';
-      input.el.title = typeof props.title === 'function' ? props.title(editorView.state) : props.title || '';
-      // create the label for the button and add a CSS class according to the EditorState
-      const label = document.createElement('span');
-      label.innerHTML = props.label || '';
-      el.appendChild(input.el);
-      el.appendChild(label);
-      if (command(editorView.state)) {
-        el.classList.remove('ProseMirror-menu-disabled');
-        input.el.disabled = false;
-      } else {
-        el.classList.add('ProseMirror-menu-disabled');
-        input.el.disabled = true;
-      }
-      // return the HTML node containing the "insert Image" button
-      return el;
-    },
+    ...props
   });
 }
 
@@ -291,7 +266,7 @@ export function menu(schema: Schema, { start, before, after, end}: Additions = {
   ], [
     insertItem(schema.nodes.ol, { icon: {text: ""}, title: 'Ordered list', class: 'ic-olist' }),
     insertItem(schema.nodes.ul, { icon: {text: ""}, title: 'Unordered list', class: 'ic-ulist' }),
-    insertImageItem(schema.nodes.image, { title: 'Insert image', class: 'ic-image' }),
+    insertImageItem(schema.nodes.image, { icon: {text: ""}, title: 'Insert image', class: 'ic-image' }),
   ]];
   if (!start) {
     start = [];
@@ -323,3 +298,29 @@ export function menu(schema: Schema, { start, before, after, end}: Additions = {
     ...end,
   ] });
 }
+
+
+export const doubleClickImagePlugin = new Plugin({
+  props: {
+    handleDOMEvents: {
+      dblclick: (view, event) => {
+        const { schema, doc } = view.state;
+        const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
+        if (pos) {
+          const node = doc.nodeAt(pos.pos);
+          const { state, dispatch } = view;
+          if (node && node.type === schema.nodes.image) {
+            imageInputOverlay((imageInfo) => {
+              if (!imageInfo) return false;
+              const newNode = createNode(schema.nodes['fig'], { src: imageInfo.src, scope: imageInfo.scope, alt: imageInfo.alt, height: imageInfo.height, width: imageInfo.width });
+              dispatch(state.tr.replaceWith(pos.pos - 1, pos.pos + 1, newNode));
+            }, node);
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+  }
+});

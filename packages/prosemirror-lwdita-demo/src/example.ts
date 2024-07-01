@@ -6,6 +6,7 @@ import jsonDocLoader from "./doc";
 import { menu, shortcuts } from "@evolvedbinary/prosemirror-lwdita";
 import { githubMenuItem, openFileMenuItem, saveFileMenuItem} from "./demo-plugin";
 import { history } from "prosemirror-history";
+import { doubleClickImagePlugin } from '@evolvedbinary/prosemirror-lwdita'
 
 const schemaObject = schema();
 
@@ -40,6 +41,7 @@ jsonDocLoader.then(jsonDoc => {
             saveFileMenuItem()
           ]],
         }),
+        doubleClickImagePlugin
       ]
     })
     // create a new EditorView with the dom element and the state
