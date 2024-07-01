@@ -340,7 +340,8 @@ export function imageInputOverlay(callback: (args: any) => void, node?: Node): v
       reader.onload = () => {
         // capture the file name in the base64 string
         // edit the image base64 to include a url copy
-        const base64 = reader.result?.split(',') as string;
+        const imageBuffer = reader.result as string;
+        const base64 = imageBuffer.split(',');
         const base64withName = base64[0] + `;filename=${file.name}` + ',' + base64[1];
         callback({
           src: base64withName,
@@ -366,7 +367,8 @@ export function imageInputOverlay(callback: (args: any) => void, node?: Node): v
           const reader = new FileReader();
           reader.onloadend = () => {
             // edit the image base64 to include a url copy
-            const base64 = reader.result?.split(',') as string;
+            const imageBuffer = reader.result as string;
+            const base64 = imageBuffer.split(',');
             const base64withurl = base64[0] + `;url=${urlInput.value}` + ',' + base64[1];
             callback({
               src: base64withurl,
@@ -394,7 +396,6 @@ export function imageInputOverlay(callback: (args: any) => void, node?: Node): v
  * Error handling should be improved in `reader.onerror = () => {};`
  *
  * @param type - NodeType
- * @param input - InputContainer
  * @returns Command
  */
 export function insertImage(type: NodeType): Command {

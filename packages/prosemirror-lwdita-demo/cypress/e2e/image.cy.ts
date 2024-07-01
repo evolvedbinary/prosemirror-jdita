@@ -71,11 +71,11 @@ describe('handling images', () => {
     .get('#editor > div > div.ProseMirror-menubar > span:nth-child(16) > div')
     .click()
     .get('#fileInput')
-    .selectFile('cypress/fixtures/eb-rose-small.png')
+    .selectFile('cypress/fixtures/small.png')
     .get('#okButton')
     .click()
     .get('figure img')
-    // the test is crashing here and can not compare the base64 string to image src
+    .should('have.attr', 'src', `data:image/png;base64;filename=small.png,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=`)
   });
 
   it('lunch image upload dialog using the shortut', () => {
