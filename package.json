@@ -45,7 +45,7 @@
     "packages/prosemirror-lwdita-demo"
   ],
   "devDependencies": {
-    "@tsconfig/recommended": "^1.0.6",
+    "@tsconfig/recommended": "^1.0.7",
     "rimraf": "^5.0.7"
   },
   "packageManager": "yarn@4.2.2"
